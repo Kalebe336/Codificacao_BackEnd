@@ -1,0 +1,15 @@
+{
+  "name": "codificacao-frutas",
+  "version": "1.0.0",
+  "description": "API simples de frutas para exercícios (07.04.26)",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node ./src/server.js",
+    "dev": "node --watch ./src/server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {}
+}
