@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <div class="left-side">
+            <div class="form-container">
+                <h1>Notas</h1>
+                <form id="notesForm">
+                    <div class="form-group">
+                        <input type="text" id="studentName" placeholder="Nome do aluno">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="studentClass" placeholder="Turma">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="studentGrade" placeholder="Nota">
+                    </div>
+                    <div class="form-group">
+                        <textarea id="studentNotes" placeholder="Observações"></textarea>
+                    </div>
+                    <div class="btn-container">
+                        <button type="button" class="btn-save" onclick="salvarNota()">Salvar nota</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="right-side">
+            <div class="preview-list" id="previewList"></div>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
