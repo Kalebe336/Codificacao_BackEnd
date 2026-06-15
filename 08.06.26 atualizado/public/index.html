@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Delivery Chat - Client</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col items-center justify-center p-4">
+
+  <div class="w-full max-w-md bg-white rounded-lg shadow-md overflow-hidden flex flex-col h-[500px]">
+
+    <div id="chat-header" class="bg-blue-900 text-white p-4">
+      <div class="flex items-center">
+        <h1 id="chat-title" class="text-lg font-bold">Chat de Entrega</h1>
+        <div class="ml-auto inline-flex items-center px-2 py-1 text-xs font-semibold bg-green-500 text-white rounded">
+          ativo
+        </div>
+      </div>
+      <div class="mt-1 text-sm opacity-95 flex flex-wrap gap-x-4 gap-y-1">
+        <p><span class="font-semibold">Cliente:</span> <span id="customer-name">Carregando...</span></p>
+        <p><span class="font-semibold">Vendedor:</span> <span id="driver-name">Carregando...</span></p>
+      </div>
+
+      <div class="mt-2 text-xs opacity-90">
+        <span class="font-semibold">Status:</span>
+        <span id="order-status">A caminho</span>
+      </div>
+    </div>
+
+    <!-- Botões acima do container de mensagens (trocar remetente) -->
+    <div class="p-3 bg-white border-b flex gap-2">
+      <button id="btn-vendedor" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">
+        Vendedor
+      </button>
+      <button id="btn-cliente" class="bg-blue-100 text-blue-900 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200">
+        Cliente
+      </button>
+    </div>
+
+    <div class="px-4 py-2 bg-gray-50 border-b flex gap-2">
+      <button id="tab-historico" class="px-3 py-1 rounded-lg text-xs font-semibold bg-blue-600 text-white">Histórico</button>
+      <button id="tab-encerradas" class="px-3 py-1 rounded-lg text-xs font-semibold bg-gray-200 text-gray-800 hover:bg-gray-300">Conversas encerradas</button>
+    </div>
+
+    <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-50">
+    </div>
+
+
+    <div class="p-3 bg-white border-t flex gap-2">
+      <input id="msg-input" type="text" placeholder="Digite uma mensagem..." class="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <button id="send-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">Enviar</button>
+    </div>
+  </div>
+
+  <script>
+    const orderId = 'order-101'; // Focado no primeiro pedido mockado
+    const messagesContainer = document.getElementById('chat-messages');
+    const msgInput = document.getElementById('msg-input');
+    const sendBtn = document.getElementById('send-btn');
+
+    const btnVendedor = document.getElementById('btn-vendedor');
+    const btnCliente = document.getElementById('btn-cliente');
+
+    const tabHistorico = document.getElementById('tab-historico');
+    const tabEncerradas = document.getElementById('tab-encerradas');
+
+    let activeSender = 'customer'; // padrão: cliente
+
+    function setActiveSender(sender) {
+      activeSender = sender;
+
+      // Sinalização visual (azul mais forte para selecionado)
+      if (sender === 'driver') {
+        btnVendedor.className = 'bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700';
+        btnCliente.className = 'bg-blue-100 text-blue-900 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200';
+      } else {
+        btnCliente.className = 'bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700';
+        btnVendedor.className = 'bg-blue-100 text-blue-900 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-200';
+      }
+    }
+
+    setActiveSender('customer');
+
+    btnVendedor.addEventListener('click', () => setActiveSender('driver'));
+    btnCliente.addEventListener('click', () => setActiveSender('customer'));
+
+    // Lista mock de chats (Histórico / Conversas encerradas)
+    // Observação: o chat principal continua sendo order-101 e deve ser exibido no tab "Histórico".
+    const mockChats = [
+      {
+        id: 'order-101',
+        orderStatus: 'A caminho',
+        driver: { name: 'Carlos Silva' },
+        customer: { name: 'Ana Souza' },
+        messages: [
+          { id: 1, sender: 'system', text: 'Pedido retirado pelo entregador.', timestamp: '20:15' },
+          { id: 2, sender: 'driver', text: 'Olá Ana, estou a caminho do seu endereço!', timestamp: '20:16' },
+          { id: 3, sender: 'customer', text: 'Legal, Carlos! O interfone está com defeito, pode me ligar quando chegar?', timestamp: '20:18' }
+        ]
+      },
+      {
+        id: 'order-103',
+        orderStatus: 'Entregue',
+        driver: { name: 'Carlos Silva' },
+        customer: { name: 'Carla Rocha' },
+        messages: [
+          { id: 1, sender: 'system', text: 'Pedido entregue com sucesso.', timestamp: '18:10' },
+          { id: 2, sender: 'driver', text: 'Entreguei! Obrigado!', timestamp: '18:12' },
+          { id: 3, sender: 'customer', text: 'Recebi, valeu!', timestamp: '18:13' }
+        ]
+      },
+      {
+        id: 'order-104',
+        orderStatus: 'Cancelado',
+        driver: null,
+        customer: { name: 'Bruno Lima' },
+        messages: [
+          { id: 1, sender: 'system', text: 'Conversas encerradas (pedido cancelado).', timestamp: '16:40' }
+        ]
+      }
+    ];
+
+    function getLabelSender(sender) {
+      if (sender === 'driver') return 'CARLOS';
+      if (sender === 'customer') return 'ANA';
+      return String(sender).toUpperCase();
+    }
+
+    let currentView = 'historico';
+
+    // Função para renderizar as mensagens na tela
+    function renderMessages(chat) {
+      // Se for histórico/encerradas, reaproveita a mesma renderização por chat.
+
+      // Se estiver no tab de historico/encerradas, pode ocorrer de não haver ids/nomes completos.
+      // Ainda assim, a renderização abaixo usa os mesmos elementos visuais.
+      
+
+      // Cabeçalho com Cliente e Vendedor
+      const customerNameEl = document.getElementById('customer-name');
+      const driverNameEl = document.getElementById('driver-name');
+      if (customerNameEl) customerNameEl.textContent = chat.customer?.name || 'Não informado';
+      if (driverNameEl) driverNameEl.textContent = chat.driver?.name || 'Não atribuído';
+
+      messagesContainer.innerHTML = '';
+
+      chat.messages.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = `max-w-[80%] rounded-lg p-3 text-sm shadow-sm `;
+
+        if (msg.sender === 'customer') {
+          div.className += 'bg-blue-500 text-white self-end ml-auto';
+        } else if (msg.sender === 'driver') {
+          div.className += 'bg-blue-100 text-blue-900 self-start';
+        } else {
+          div.className += 'bg-blue-50 text-blue-900 text-center mx-auto my-2 w-full max-w-xs';
+        }
+
+        div.innerHTML = `
+          <p class="font-bold text-[11px] opacity-75">${msg.sender === 'driver' ? 'CARLOS' : msg.sender === 'customer' ? 'ANA' : msg.sender.toUpperCase()}</p>
+          <p>${msg.text}</p>
+          <span class="text-[10px] block text-right mt-1 opacity-60">${msg.timestamp}</span>
+        `;
+
+        messagesContainer.appendChild(div);
+      });
+
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function setTab(tab) {
+      if (tab === 'historico') {
+        tabHistorico.className = 'px-3 py-1 rounded-lg text-xs font-semibold bg-blue-600 text-white';
+        tabEncerradas.className = 'px-3 py-1 rounded-lg text-xs font-semibold bg-gray-200 text-gray-800 hover:bg-gray-300';
+      } else {
+        tabEncerradas.className = 'px-3 py-1 rounded-lg text-xs font-semibold bg-blue-600 text-white';
+        tabHistorico.className = 'px-3 py-1 rounded-lg text-xs font-semibold bg-gray-200 text-gray-800 hover:bg-gray-300';
+      }
+    }
+
+    tabHistorico.addEventListener('click', () => {
+      setTab('historico');
+      renderHistoryOrClosed('historico');
+    });
+    tabEncerradas.addEventListener('click', () => {
+      setTab('encerradas');
+      renderHistoryOrClosed('encerradas');
+    });
+
+    // Buscar dados do servidor (conversa ATUAL)
+    async function loadChat() {
+      const res = await fetch(`/api/chats/${orderId}`);
+      const chat = await res.json();
+      renderMessages(chat);
+
+      const orderStatusEl = document.getElementById('order-status');
+      if (orderStatusEl) orderStatusEl.textContent = chat.orderStatus || '—';
+    }
+
+    // Exibir histórico/encerradas (conversas antigas)
+    function renderHistoryOrClosed(view) {
+      const list = view === 'historico' ? mockChats.filter(c => c.orderStatus !== 'Cancelado') : mockChats.filter(c => c.orderStatus === 'Cancelado');
+
+      // Para manter simples: mostra a conversa mais “antiga” do filtro.
+      const chatToShow = list[0] || mockChats[0];
+      if (!chatToShow) return;
+
+      // Renderiza chat mock, ignorando polling do servidor.
+      renderMessages(chatToShow);
+
+      const orderStatusEl = document.getElementById('order-status');
+      if (orderStatusEl) orderStatusEl.textContent = chatToShow.orderStatus || '—';
+    }
+
+    // Enviar nova mensagem
+    async function sendMessage() {
+      const text = msgInput.value.trim();
+      if (!text) return;
+
+      const res = await fetch(`/api/chats/${orderId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sender: activeSender, text })
+      });
+
+      if (res.ok) {
+        msgInput.value = '';
+        loadChat();
+      }
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    msgInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+    // Carga inicial
+    loadChat();
+    // Atualiza o chat a cada 3 segundos (polling)
+    setInterval(loadChat, 3000);
+  </script>
+</body>
+</html>
+
+
